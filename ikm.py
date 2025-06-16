@@ -1,7 +1,28 @@
+class Node:
+    """Класс для представления узла в цепочке шариков."""
+
+    def __init__(self, color):
+        self.color = color
+        self.next = None
+
+
 class BallChain:
     def __init__(self, balls):
         """Инициализация цепочки шариков."""
-        self.balls = balls  # Основная структура данных для хранения цепочки
+        self.head = None
+        self.build_chain(balls)  # Создание цепочки из входных данных
+
+    def build_chain(self, balls):
+        """Создает цепочку шариков из списка цветов."""
+        for color in balls:
+            new_node = Node(color)
+            if not self.head:
+                self.head = new_node
+            else:
+                current = self.head
+                while current.next:
+                    current = current.next
+                current.next = new_node
 
     def process_chain(self):
         """Основной метод обработки цепочки шариков."""
@@ -15,27 +36,34 @@ class BallChain:
 
     def remove_sequences(self):
         """Внутренний метод для поиска и удаления последовательностей из 3+ одинаковых шариков."""
-        if not self.balls:  # Если цепочка пуста
+        if not self.head:  # Если цепочка пуста
             return 0
 
-        start = 0  # Начальный индекс для поиска последовательности
-        removed = 0  # Счетчик удаленных шариков
+        current = self.head
+        previous = None
+        removed = 0
 
-        while start < len(self.balls):
-            current = start + 1
-            # Находим конец текущей последовательности одинаковых шариков
-            while current < len(self.balls) and self.balls[current] == self.balls[start]:
-                current += 1
+        while current:
+            count = 1  # Счетчик текущей последовательности
+            while current.next and current.color == current.next.color:
+                count += 1
+                current = current.next
 
-            sequence_length = current - start
-            if sequence_length >= 3:  # Если нашли последовательность из 3+ шариков
-                # Удаляем последовательность из цепочки
-                del self.balls[start:current]
-                removed += sequence_length
-                # Рекурсивно продолжаем поиск новых последовательностей
-                return removed + self.remove_sequences()
+            if count >= 3:  # Если нашли последовательность из 3+ шариков
+                # Удаляем последовательность
+                if previous is None:  # Удаляем с начала цепочки
+                    self.head = current.next
+                else:
+                    previous.next = current.next
 
-            start += 1  # Переходим к следующему шарику
+                removed += count
+
+                # Возвращаемся к предыдущему узлу, чтобы продолжить поиск
+                current = previous.next if previous else self.head
+                continue
+
+            previous = current  # Переходим к следующему шарику
+            current = current.next
 
         return removed  # Возвращаем количество удаленных шариков
 
@@ -48,41 +76,33 @@ def main():
 
     while True:
         try:
-            # Получаем и обрабатываем пользовательский ввод
             user_input = input("Введите данные: ").strip()
             if not user_input:
                 print("Ошибка: ввод не может быть пустым. Попробуйте снова.")
                 continue
 
-            # Преобразуем ввод в список чисел
             parts = list(map(int, user_input.split()))
             if len(parts) < 2:
                 print("Ошибка: нужно ввести как минимум количество шариков и один цвет. Попробуйте снова.")
                 continue
 
-            # Проверяем соответствие количества шариков
             n = parts[0]
             if n != len(parts) - 1:
                 print(f"Ошибка: указано {n} шариков, но введено {len(parts) - 1} цветов. Попробуйте снова.")
                 continue
 
-            # Проверяем допустимый диапазон количества шариков
             if n < 1 or n > 10 ** 5:
                 print("Ошибка: количество шариков должно быть от 1 до 100000. Попробуйте снова.")
                 continue
 
-            # Извлекаем и проверяем цвета шариков
             balls = parts[1:]
             if any(ball < 0 or ball > 9 for ball in balls):
                 print("Ошибка: цвета шариков должны быть числами от 0 до 9. Попробуйте снова.")
                 continue
 
-            # Создаем цепочку и обрабатываем
             chain = BallChain(balls)
             removed = chain.process_chain()
             print(f"Результат: {removed}")
-
-            # Запрос на повторение
             another = input("Хотите проверить другую цепочку? (да/нет): ").lower()
             if another != 'да':
                 break
